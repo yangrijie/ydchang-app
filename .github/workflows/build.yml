@@ -19,11 +19,34 @@ jobs:
 
     - name: Build APK with kivy/buildozer Docker
       run: |
-        # kivy/buildozer 镜像入口点就是 buildozer 命令,直接传参数
         docker run --rm \
           -v "$PWD":/home/user/hostcwd \
+          --entrypoint="" \
           kivy/buildozer:latest \
-          android debug
+          bash -c '
+            set -e
+            # 1. 下载新版 Android cmdline-tools (旧版 6514223 无法安装 build-tools)
+            export ANDROID_SDK_ROOT=/home/user/.buildozer/android/platform/android-sdk
+            mkdir -p $ANDROID_SDK_ROOT
+            cd /tmp
+            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline.zip || curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline.zip
+            unzip -q cmdline.zip
+            mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+            rm -rf $ANDROID_SDK_ROOT/cmdline-tools/latest
+            mv cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest
+            export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+
+            # 2. 接受许可并安装 build-tools + platform
+            yes | sdkmanager --licenses >/dev/null 2>&1 || true
+            sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
+
+            # 3. 创建旧路径符号链接 (buildozer 找 tools/bin/sdkmanager)
+            ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest $ANDROID_SDK_ROOT/tools
+
+            # 4. 运行 buildozer
+            cd /home/user/hostcwd
+            buildozer android debug
+          '
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
