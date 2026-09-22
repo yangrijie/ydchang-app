@@ -38,7 +38,8 @@ android.release_artifact = aapk-debug
 
 [buildozer]
 log_level = 2
-warn_on_root = 1
+# Docker 容器内以 root 运行,需要关闭 root 警告
+warn_on_root = 0
 
 # 构建环境
 build_dir = .buildozer
