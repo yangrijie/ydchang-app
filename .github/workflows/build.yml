@@ -29,7 +29,7 @@ jobs:
             export ANDROID_SDK_ROOT=/home/user/.buildozer/android/platform/android-sdk
             mkdir -p $ANDROID_SDK_ROOT
             cd /tmp
-            wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline.zip || curl -sSL https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o cmdline.zip
+            python3 -c "import urllib.request; urllib.request.urlretrieve('https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip', 'cmdline.zip')"
             unzip -q cmdline.zip
             mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
             rm -rf $ANDROID_SDK_ROOT/cmdline-tools/latest
