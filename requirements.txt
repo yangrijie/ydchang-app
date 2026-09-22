@@ -1,0 +1,15 @@
+# 源达文字圈 APK 依赖
+# 通过 buildozer 在 WSL2/Linux 环境下编译为 APK
+# 桌面调试可直接 pip install -r requirements.txt
+
+# KivyMD 1.2.0+ (MD3 风格)
+kivymd >= 1.2.0
+
+# Kivy (kivymd 自动依赖,显式标注)
+kivy >= 2.3.0
+
+# 网络请求
+requests >= 2.31.0
+
+# 注意: jnius 在桌面不可用,仅 APK 内有效
+# jnius 在 buildozer 中通过 python-for-android 自动安装
