@@ -26,10 +26,21 @@ jobs:
     - name: Install Buildozer
       run: |
         sudo apt-get update -qq
-        sudo apt-get install -y -qq git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
+        sudo apt-get install -y -qq git zip unzip python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
         sudo pip3 install --break-system-packages buildozer "cython<3"
 
+    - name: Pre-install Android SDK components
+      run: |
+        export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+        # Accept licenses
+        yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
+        # Install build-tools 33 and platform 33
+        $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.0" "platforms;android-33" >/dev/null 2>&1 || true
+
     - name: Build APK
+      env:
+        ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        ANDROID_HOME: /usr/local/lib/android/sdk
       run: buildozer android debug
 
     - name: Upload APK
