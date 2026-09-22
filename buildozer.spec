@@ -21,6 +21,8 @@ android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTI
 # 前台服务类型,Android 14+ 强制要求
 android.api = 33
 android.minapi = 24
+# 指定 build-tools 版本 (与 workflow 中安装的一致)
+android.build_tools_version = 33.0.0
 # SDK 路径由 Docker 镜像 (kivy/buildozer) 内部管理,不在这里指定
 
 # 服务/前台 Service 配置
