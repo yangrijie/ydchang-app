@@ -19,12 +19,11 @@ jobs:
 
     - name: Build APK with kivy/buildozer Docker
       run: |
-        # 以 root 运行容器 (buildozer.spec 中 warn_on_root=0)
+        # kivy/buildozer 镜像入口点就是 buildozer 命令,直接传参数
         docker run --rm \
           -v "$PWD":/home/user/hostcwd \
-          -w /home/user/hostcwd \
           kivy/buildozer:latest \
-          bash -c "cd /home/user/hostcwd && buildozer android debug"
+          android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
