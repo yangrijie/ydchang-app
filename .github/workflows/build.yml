@@ -19,11 +19,8 @@ jobs:
 
     - name: Build APK with kivy/buildozer Docker
       run: |
-        # kivy/buildozer 镜像以 user(uid=1000) 运行 buildozer,不能用 root
-        # 将工作目录权限赋给 1000,确保容器内可写入
-        sudo chown -R 1000:1000 .
+        # 以 root 运行容器 (buildozer.spec 中 warn_on_root=0)
         docker run --rm \
-          --user 1000:1000 \
           -v "$PWD":/home/user/hostcwd \
           -w /home/user/hostcwd \
           kivy/buildozer:latest \
