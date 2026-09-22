@@ -1,0 +1,7 @@
+buildozer/
+.buildozer/
+bin/
+*.apk
+__pycache__/
+*.pyc
+ydchang.db
