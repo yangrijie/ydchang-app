@@ -8,7 +8,7 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-requirements = python3,kivy,kivymd,requests
+requirements = python3,kivy==2.1.0,kivymd==1.1.1,requests
 # 必须包含的权限:
 #   INTERNET - 网络访问
 #   ACCESS_NETWORK_STATE - 检测网络状态
