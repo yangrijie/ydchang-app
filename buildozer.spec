@@ -8,7 +8,7 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-requirements = python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,requests
+requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,requests
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTIFICATIONS,WAKE_LOCK,RECEIVE_BOOT_COMPLETED
 
 android.api = 33
