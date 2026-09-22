@@ -32,6 +32,9 @@ jobs:
     - name: Pre-install Android SDK components
       run: |
         export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+        # buildozer expects tools/bin/sdkmanager but runner has cmdline-tools/latest/bin/sdkmanager
+        sudo rm -rf $ANDROID_SDK_ROOT/tools
+        sudo ln -sf $ANDROID_SDK_ROOT/cmdline-tools/latest $ANDROID_SDK_ROOT/tools
         # Accept licenses
         yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null 2>&1 || true
         # Install build-tools 33 and platform 33
