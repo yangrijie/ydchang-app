@@ -36,6 +36,8 @@ jobs:
         yes | sdkmanager --licenses >/dev/null 2>&1 || true
         sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
         ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest $ANDROID_SDK_ROOT/tools
+        # 降级 pip 到兼容 Python 3.14 的版本 (避免 BuildDependencyInstallError)
+        pip install "pip==24.3.1" 2>/dev/null || true
         cd /home/user/hostcwd
         buildozer android debug
         SCRIPT
@@ -43,7 +45,7 @@ jobs:
           -v "$PWD":/home/user/hostcwd \
           -v /tmp/build.sh:/tmp/build.sh:ro \
           --entrypoint="" \
-          kivy/buildozer:20240620 \
+          kivy/buildozer:latest \
           bash /tmp/build.sh
 
     - name: Upload APK
