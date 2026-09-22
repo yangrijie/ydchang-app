@@ -43,7 +43,7 @@ jobs:
           -v "$PWD":/home/user/hostcwd \
           -v /tmp/build.sh:/tmp/build.sh:ro \
           --entrypoint="" \
-          kivy/buildozer:latest \
+          kivy/buildozer:20240620 \
           bash /tmp/build.sh
 
     - name: Upload APK
