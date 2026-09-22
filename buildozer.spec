@@ -8,19 +8,18 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-requirements = python3,kivy==2.3.0,kivymd==2.0.0,requests
+requirements = python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,requests
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTIFICATIONS,WAKE_LOCK,RECEIVE_BOOT_COMPLETED
 
 android.api = 33
 android.minapi = 24
 android.build_tools_version = 33.0.0
-android.ndk = 29
+android.ndk = 25b
 
 services = YDChangService:services.ydchang_service
 
 android.private_storage = True
 
-# fix: valid values are apk/aab/aar, aapk-debug was a typo
 android.release_artifact = apk
 
 [buildozer]
@@ -30,5 +29,4 @@ build_dir = .buildozer
 
 android.archs = arm64-v8a, armeabi-v7a
 
-# fix: Python 3.14 requires develop branch, stable is incompatible
-p4a.branch = develop
+p4a.branch = stable
