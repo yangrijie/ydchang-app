@@ -36,8 +36,12 @@ jobs:
         yes | sdkmanager --licenses >/dev/null 2>&1 || true
         sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
         ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest $ANDROID_SDK_ROOT/tools
-        # 降级 pip 到兼容 Python 3.14 的版本 (避免 BuildDependencyInstallError)
+        # 降级 pip 到兼容 Python 3.14 的版本
         pip install "pip==24.3.1" 2>/dev/null || true
+        # Python 3.13+ 移除了 cgi 模块,Kivy 2.1.0 构建需要它
+        pip install legacy-cgi 2>/dev/null || true
+        # 禁用构建隔离,让 legacy-cgi 在构建环境中可用
+        export PIP_NO_BUILD_ISOLATION=1
         cd /home/user/hostcwd
         buildozer android debug
         SCRIPT
