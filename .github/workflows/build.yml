@@ -22,7 +22,9 @@ jobs:
         # 将构建脚本写入临时文件,避免引号嵌套问题
         cat > /tmp/build.sh << 'SCRIPT'
         set -e
-        export ANDROID_SDK_ROOT=/home/user/.buildozer/android/platform/android-sdk
+        # buildozer 以 root 运行,SDK 默认在 /root/.buildozer/...
+        export ANDROID_SDK_ROOT=/root/.buildozer/android/platform/android-sdk
+        export ANDROIDSDK=$ANDROID_SDK_ROOT
         mkdir -p $ANDROID_SDK_ROOT
         cd /tmp
         python3 -c "import urllib.request; urllib.request.urlretrieve('https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip', 'cmdline.zip')"
