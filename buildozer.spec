@@ -21,6 +21,8 @@ android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTI
 # 前台服务类型,Android 14+ 强制要求
 android.api = 33
 android.minapi = 24
+# 使用 GitHub Actions runner 预装的 SDK
+android.sdk_path = /usr/local/lib/android/sdk
 
 # 服务/前台 Service 配置
 services = YDChangService:services.ydchang_service
