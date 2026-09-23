@@ -26,8 +26,8 @@ class LiveRoomsScreen(MDScreen):
 
         self.top_bar = MDTopAppBar(
             title="直播间列表",
-            left_action_item=[["menu", self.on_open_nav]],
-            right_action_item=[["refresh", self.on_refresh]],
+            left_action_items=[["menu", self.on_open_nav]],
+            right_action_items=[["refresh", self.on_refresh]],
         )
         root.add_widget(self.top_bar)
 
