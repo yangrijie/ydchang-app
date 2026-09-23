@@ -22,7 +22,6 @@ android.private_storage = True
 
 android.release_artifact = apk
 
-# avoid pip dependency resolution failures for kivymd on Android
 android.pip = --no-deps
 
 [buildozer]
@@ -32,4 +31,4 @@ build_dir = .buildozer
 
 android.archs = arm64-v8a, armeabi-v7a
 
-p4a.branch = stable
+p4a.branch = develop
