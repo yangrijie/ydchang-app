@@ -8,14 +8,17 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,materialyoucolor,pillow,materialshapes,pycairo,asynckivy,requests
+# kivy pinned to 2.3.1: 2.3.0's cython-generated cgl code fails to build with
+# clang 16+ (-Wincompatible-function-pointer-types) shipped with NDK 26+.
+# p4a develop defaults to kivy 2.3.1 for the same reason.
+requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.1,kivymd==2.0.0,materialyoucolor,pillow,materialshapes,pycairo,asynckivy,requests
 
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTIFICATIONS,WAKE_LOCK,RECEIVE_BOOT_COMPLETED
 
 android.api = 33
 android.minapi = 24
 android.build_tools_version = 33.0.0
-# p4a develop's libthorvg (kivy dep) needs libomp.so shipped with newer NDKs.
+# p4a develop's libthorvg (a kivy dependency) needs libomp.so shipped with newer NDKs.
 # buildozer/p4a recommend 28c.
 android.ndk = 28c
 
