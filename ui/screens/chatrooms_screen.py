@@ -26,8 +26,8 @@ class ChatroomsScreen(MDScreen):
 
         self.top_bar = MDTopAppBar(
             title="文字圈列表",
-            right_action_item=[["refresh", self.on_refresh]],
-            left_action_item=[["menu", self.on_open_nav]],
+            right_action_items=[["refresh", self.on_refresh]],
+            left_action_items=[["menu", self.on_open_nav]],
         )
         root.add_widget(self.top_bar)
 
