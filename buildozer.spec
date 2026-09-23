@@ -15,7 +15,9 @@ android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTI
 android.api = 33
 android.minapi = 24
 android.build_tools_version = 33.0.0
-android.ndk = 25b
+# p4a develop's libthorvg (kivy dep) needs libomp.so shipped with newer NDKs.
+# buildozer/p4a recommend 28c.
+android.ndk = 28c
 
 android.archs = arm64-v8a, armeabi-v7a
 
