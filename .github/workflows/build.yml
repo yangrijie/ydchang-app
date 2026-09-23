@@ -36,15 +36,6 @@ jobs:
         yes | sdkmanager --licenses >/dev/null 2>&1 || true
         sdkmanager "build-tools;33.0.0" "platforms;android-33" "platform-tools"
         ln -sfn $ANDROID_SDK_ROOT/cmdline-tools/latest $ANDROID_SDK_ROOT/tools
-        # 降级 pip 到兼容 Python 3.14 的版本
-        pip install "pip==24.3.1" 2>/dev/null || true
-        # Python 3.13+ 移除了 cgi 模块,Kivy 构建需要它
-        # 安装 legacy-cgi 并复制到 stdlib,使虚拟环境也能继承
-        pip install legacy-cgi 2>/dev/null || true
-        STDLIBDIR=$(python3 -c "import sysconfig; print(sysconfig.get_path('stdlib'))")
-        if [ -d "$STDLIBDIR" ]; then
-          python3 -c "import cgi, shutil, sysconfig; shutil.copy(cgi.__file__, sysconfig.get_path('stdlib')+'/cgi.py')" 2>/dev/null || true
-        fi
         cd /home/user/hostcwd
         buildozer android debug
         SCRIPT
