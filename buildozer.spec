@@ -8,7 +8,7 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,requests
+requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.0,kivymd==2.0.0,materialyoucolor,pillow,materialshapes,pycairo,asynckivy,requests
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTIFICATIONS,WAKE_LOCK,RECEIVE_BOOT_COMPLETED
 
 android.api = 33
@@ -22,7 +22,8 @@ android.private_storage = True
 
 android.release_artifact = apk
 
-android.pip = --no-deps
+# local recipe dir (overrides materialyoucolor version)
+p4a.local_recipes = ./p4a-recipes
 
 [buildozer]
 log_level = 2
