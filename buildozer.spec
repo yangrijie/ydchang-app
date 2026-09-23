@@ -22,6 +22,9 @@ android.private_storage = True
 
 android.release_artifact = apk
 
+# avoid pip dependency resolution failures for kivymd on Android
+android.pip = --no-deps
+
 [buildozer]
 log_level = 2
 warn_on_root = 0
