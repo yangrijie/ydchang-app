@@ -138,6 +138,18 @@ except BaseException:
     raise
 
 
+# 尽早把 Kivy 自身日志接入同一文件 (覆盖窗口/主循环初始化阶段)
+try:
+    import logging
+    from kivy.logger import Logger
+    _kivy_fh = logging.FileHandler(LOG_FILE, encoding="utf-8")
+    _kivy_fh.setLevel(logging.DEBUG)
+    Logger.addHandler(_kivy_fh)
+    _log("kivy logger attached")
+except Exception as _e:
+    _log("attach kivy logger failed: %r" % (_e,))
+
+
 class YDChangApp(MDApp):
     """源达投顾 APK 主应用."""
 
@@ -150,16 +162,6 @@ class YDChangApp(MDApp):
 
     def build(self):
         try:
-            # 让 Kivy 日志也落到同一个文件
-            try:
-                import logging
-                from kivy.logger import Logger
-                _h = logging.FileHandler(LOG_FILE, encoding="utf-8")
-                _h.setLevel(logging.DEBUG)
-                Logger.addHandler(_h)
-            except Exception:
-                pass
-
             _log("build(): init database")
             self.db = AppDatabase()
 
