@@ -32,7 +32,7 @@ class SettingsScreen(MDScreen):
         # 顶栏
         top_bar = MDTopAppBar(
             title="设置",
-            right_action_item=[["refresh", self.on_refresh]],
+            right_action_items=[["refresh", self.on_refresh]],
         )
         root.add_widget(top_bar)
 
