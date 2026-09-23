@@ -364,6 +364,8 @@ class AppDatabase:
                                 [tuple(r[c] for c in cols) for r in rows],
                             )
                             stats[stat_key] = cur.rowcount
+                    except Exception:
+                        pass
                 # 导入 settings (仅 ydchang 相关)
                 try:
                     rows = src.execute(
