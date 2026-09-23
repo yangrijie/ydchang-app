@@ -8,10 +8,11 @@ source.include_dirs = assets
 
 version = 1.0.0
 
-# kivy pinned to 2.3.1: 2.3.0's cython-generated cgl code fails to build with
-# clang 16+ (-Wincompatible-function-pointer-types) shipped with NDK 26+.
-# p4a develop defaults to kivy 2.3.1 for the same reason.
-requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.1,kivymd==2.0.0,materialyoucolor,pillow,materialshapes,pycairo,asynckivy,requests
+# kivymd pinned to 1.1.1: the UI code uses KivyMD 1.x APIs
+# (kivymd.uix.toolbar.MDTopAppBar, MDDialog(title/text/buttons), MDFlatButton,
+#  MDRaisedButton, MDLabel(font_style/theme_text_color) ...) which were removed
+# or renamed in KivyMD 2.0. KivyMD 1.1.1 only needs kivy + pillow.
+requirements = hostpython3==3.11.9,python3==3.11.9,kivy==2.3.1,kivymd==1.1.1,pillow,requests
 
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,FOREGROUND_SERVICE,POST_NOTIFICATIONS,WAKE_LOCK,RECEIVE_BOOT_COMPLETED
 
@@ -19,7 +20,6 @@ android.api = 33
 android.minapi = 24
 android.build_tools_version = 33.0.0
 # p4a develop's libthorvg (a kivy dependency) needs libomp.so shipped with newer NDKs.
-# buildozer/p4a recommend 28c.
 android.ndk = 28c
 
 android.archs = arm64-v8a, armeabi-v7a
@@ -30,11 +30,10 @@ android.private_storage = True
 
 android.release_artifact = apk
 
-# local recipe dir (overrides materialyoucolor version to 3.0.4)
 p4a.local_recipes = ./p4a-recipes
 
-# use develop branch: master's run_pymodules_install has a broken "pip install -U pip"
-# step that corrupts the build venv pip (open_rich_spinner ImportError)
+# master's run_pymodules_install has a broken "pip install -U pip" step that
+# corrupts the build venv pip (open_rich_spinner ImportError) -> use develop
 p4a.branch = develop
 
 [buildozer]
