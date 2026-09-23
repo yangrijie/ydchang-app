@@ -5,28 +5,137 @@
 - 5 屏: chatrooms(文字圈) / messages(消息) / live_rooms(直播间) / videos(视频) / settings(设置)
 - 启动时初始化 DB / Collector / LiveRoomCollector / ForegroundCollector
 - 首次启动自动导入预装历史数据 (assets/ydchang_history.db)
+
+崩溃诊断(临时): 启动/运行期的异常与原生崩溃都会写入
+  手机 -> 内部存储/Android/data/org.ydchang.app/files/ydchang_crash.log
+(USB 连接电脑后可在该路径下取到, 也可用 adb 从私有目录 logs/ 下取)
 """
 from __future__ import annotations
 
+import datetime
+import faulthandler
 import os
 import sys
+import traceback
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 if SCRIPT_DIR not in sys.path:
     sys.path.insert(0, SCRIPT_DIR)
 
-from kivymd.app import MDApp
-from kivymd.uix.screenmanager import MDScreenManager
 
-from services.database import AppDatabase
-from services.collector import ChatroomCollector, LiveRoomCollector
-from services.foreground_service import ForegroundCollector
+# ──────────────────────────────────────────────────────────────────────
+# 崩溃诊断
+# ──────────────────────────────────────────────────────────────────────
+def _resolve_log_path() -> str:
+    """选一个手机侧可访问的日志路径."""
+    candidates = []
+    # 1) Android 应用外部私有目录 (USB/MTP 可见)
+    try:
+        from jnius import autoclass
+        activity = autoclass("org.kivy.android.PythonActivity").mActivity
+        if activity is not None:
+            d = activity.getExternalFilesDir(None)
+            if d is not None:
+                candidates.append(os.path.join(str(d.getAbsolutePath()),
+                                               "ydchang_crash.log"))
+    except Exception:
+        pass
+    # 2) 环境变量兜底
+    for key in ("ANDROID_PUBLIC", "EXTERNAL_STORAGE"):
+        v = os.environ.get(key)
+        if v:
+            candidates.append(os.path.join(
+                v, "Android", "data", "org.ydchang.app", "files",
+                "ydchang_crash.log"))
+    # 3) 应用私有目录 (需 adb 才能取)
+    candidates.append(os.path.join(SCRIPT_DIR, "ydchang_crash.log"))
 
-from ui.screens.chatrooms_screen import ChatroomsScreen
-from ui.screens.messages_screen import MessagesScreen
-from ui.screens.live_rooms_screen import LiveRoomsScreen
-from ui.screens.videos_screen import VideosScreen
-from ui.screens.settings_screen import SettingsScreen
+    for p in candidates:
+        try:
+            d = os.path.dirname(p)
+            if d:
+                os.makedirs(d, exist_ok=True)
+            with open(p, "a", encoding="utf-8"):
+                pass
+            return p
+        except Exception:
+            continue
+    return os.path.join(SCRIPT_DIR, "ydchang_crash.log")
+
+
+LOG_FILE = _resolve_log_path()
+_fh_bin = None
+
+
+def _log(msg: str) -> None:
+    line = "[%s] %s\n" % (datetime.datetime.now().isoformat(), msg)
+    try:
+        sys.stderr.write(line)
+    except Exception:
+        pass
+    try:
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception:
+        pass
+
+
+# faulthandler: 段错误/原生崩溃
+try:
+    _fh_bin = open(LOG_FILE, "ab")
+    faulthandler.enable(_fh_bin)
+    _log("faulthandler enabled")
+except Exception as _e:
+    _log("faulthandler enable failed: %r" % (_e,))
+
+
+# 未捕获异常
+def _excepthook(exc_type, exc, tb):
+    _log("!!! UNCAUGHT EXCEPTION !!!\n" + "".join(
+        traceback.format_exception(exc_type, exc, tb)))
+
+
+sys.excepthook = _excepthook
+
+try:
+    import threading
+
+    def _thread_excepthook(args):
+        _log("!!! UNCAUGHT THREAD EXCEPTION (%s) !!!\n" % (
+            getattr(args.thread, "name", "?"),) + "".join(
+            traceback.format_exception(args.exc_type, args.exc_value,
+                                       args.exc_traceback)))
+
+    threading.excepthook = _thread_excepthook
+except Exception:
+    pass
+
+
+_log("=" * 60)
+_log("App start: log=%s" % LOG_FILE)
+_log("python=%s argv=%s" % (sys.version.split()[0], sys.argv))
+_log("cwd=%s script_dir=%s" % (os.getcwd(), SCRIPT_DIR))
+
+
+# ── 导入阶段单独捕获 (定位 import 期崩溃) ─────────────────────────────
+try:
+    from kivymd.app import MDApp
+    from kivymd.uix.screenmanager import MDScreenManager
+
+    from services.database import AppDatabase
+    from services.collector import ChatroomCollector, LiveRoomCollector
+    from services.foreground_service import ForegroundCollector
+
+    from ui.screens.chatrooms_screen import ChatroomsScreen
+    from ui.screens.messages_screen import MessagesScreen
+    from ui.screens.live_rooms_screen import LiveRoomsScreen
+    from ui.screens.videos_screen import VideosScreen
+    from ui.screens.settings_screen import SettingsScreen
+
+    _log("all imports OK")
+except BaseException:
+    _log("!!! IMPORT FAILURE !!!\n" + traceback.format_exc())
+    raise
 
 
 class YDChangApp(MDApp):
@@ -40,36 +149,51 @@ class YDChangApp(MDApp):
         self.fg = None
 
     def build(self):
-        # 初始化数据库
-        self.db = AppDatabase()
-
-        # 首次启动: 导入预装历史数据
-        self._load_history_data()
-
-        # 初始化采集器
-        self.collector = ChatroomCollector(self.db)
-        self.live_collector = LiveRoomCollector(self.db)
         try:
-            interval_str = self.db.get_setting("ydchang.interval_sec") or "60"
-            interval = int(interval_str)
-        except Exception:
-            interval = 60
-        self.fg = ForegroundCollector(self.collector, interval_sec=interval)
+            # 让 Kivy 日志也落到同一个文件
+            try:
+                import logging
+                from kivy.logger import Logger
+                _h = logging.FileHandler(LOG_FILE, encoding="utf-8")
+                _h.setLevel(logging.DEBUG)
+                Logger.addHandler(_h)
+            except Exception:
+                pass
 
-        # 主题
-        self.theme_cls.material_style = "M3"
-        self.theme_cls.primary_palette = "Blue"
-        self.theme_cls.accent_palette = "Indigo"
-        self.theme_cls.theme_style = "Light"
+            _log("build(): init database")
+            self.db = AppDatabase()
 
-        # 路由: 5 个屏幕
-        sm = MDScreenManager()
-        sm.add_widget(ChatroomsScreen(name="chatrooms"))
-        sm.add_widget(MessagesScreen(name="messages"))
-        sm.add_widget(LiveRoomsScreen(name="live_rooms"))
-        sm.add_widget(VideosScreen(name="videos"))
-        sm.add_widget(SettingsScreen(name="settings"))
-        return sm
+            _log("build(): load history data")
+            self._load_history_data()
+
+            _log("build(): init collectors")
+            self.collector = ChatroomCollector(self.db)
+            self.live_collector = LiveRoomCollector(self.db)
+            try:
+                interval_str = self.db.get_setting("ydchang.interval_sec") or "60"
+                interval = int(interval_str)
+            except Exception:
+                interval = 60
+            self.fg = ForegroundCollector(self.collector, interval_sec=interval)
+
+            _log("build(): theme")
+            self.theme_cls.material_style = "M3"
+            self.theme_cls.primary_palette = "Blue"
+            self.theme_cls.accent_palette = "Indigo"
+            self.theme_cls.theme_style = "Light"
+
+            _log("build(): screens")
+            sm = MDScreenManager()
+            sm.add_widget(ChatroomsScreen(name="chatrooms"))
+            sm.add_widget(MessagesScreen(name="messages"))
+            sm.add_widget(LiveRoomsScreen(name="live_rooms"))
+            sm.add_widget(VideosScreen(name="videos"))
+            sm.add_widget(SettingsScreen(name="settings"))
+            _log("build(): done")
+            return sm
+        except BaseException:
+            _log("!!! build() FAILURE !!!\n" + traceback.format_exc())
+            raise
 
     def _load_history_data(self):
         """首次启动时导入预装历史数据."""
@@ -88,23 +212,36 @@ class YDChangApp(MDApp):
             except Exception:
                 pass
         if os.path.exists(history_path):
-            print(f"[App] 导入预装历史数据: {history_path}")
+            _log("import history db: %s" % history_path)
             stats = self.db.import_history_db(history_path)
-            print(f"[App] 导入完成: {stats}")
+            _log("history import done: %s" % (stats,))
         else:
-            print(f"[App] 未找到预装数据: {history_path}")
+            _log("history db not found: %s" % history_path)
 
     def on_start(self):
-        print(f"[App] 启动完成, DB: {self.db.db_path}")
-        print(f"  文字圈: {self.db.count_chatrooms()} 个, 消息: {self.db.count_msgs()} 条")
-        print(f"  直播间: {self.db.count_rooms()} 个, 视频: {self.db.count_videos()} 个")
+        try:
+            _log("on_start: db=%s" % self.db.db_path)
+            _log("on_start: chatrooms=%d msgs=%d rooms=%d videos=%d" % (
+                self.db.count_chatrooms(), self.db.count_msgs(),
+                self.db.count_rooms(), self.db.count_videos()))
+        except Exception:
+            _log("on_start log failed:\n" + traceback.format_exc())
         return super().on_start()
 
     def on_stop(self):
-        if self.fg and self.fg.is_running():
-            self.fg.stop()
+        try:
+            if self.fg and self.fg.is_running():
+                self.fg.stop()
+        except Exception:
+            pass
         return super().on_stop()
 
 
 if __name__ == "__main__":
-    YDChangApp().run()
+    try:
+        _log("calling YDChangApp().run()")
+        YDChangApp().run()
+        _log("run() returned normally")
+    except BaseException:
+        _log("!!! run() FAILURE !!!\n" + traceback.format_exc())
+        raise
