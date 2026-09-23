@@ -28,8 +28,8 @@ class VideosScreen(MDScreen):
 
         self.top_bar = MDTopAppBar(
             title="回放视频",
-            left_action_item=[["arrow-left", self.on_back]],
-            right_action_item=[["refresh", self.on_refresh]],
+            left_action_items=[["arrow-left", self.on_back]],
+            right_action_items=[["refresh", self.on_refresh]],
         )
         root.add_widget(self.top_bar)
 
