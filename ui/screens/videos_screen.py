@@ -28,7 +28,10 @@ class VideosScreen(MDScreen):
 
         self.top_bar = MDTopAppBar(
             title="回放视频",
-            left_action_items=[["arrow-left", self.on_back]],
+            left_action_items=[
+                ["arrow-left", self.on_back],
+                ["menu", self.on_open_nav],
+            ],
             right_action_items=[["refresh", self.on_refresh]],
         )
         root.add_widget(self.top_bar)
@@ -57,6 +60,35 @@ class VideosScreen(MDScreen):
 
     def on_back(self, *args):
         self.app.root.current = "live_rooms"
+
+    def on_open_nav(self, *args):
+        """导航菜单: 切换到其它主页面."""
+        from kivymd.uix.dialog import MDDialog
+        from kivymd.uix.button import MDFlatButton
+
+        dialog = MDDialog(
+            title="导航",
+            text="选择页面",
+            buttons=[
+                MDFlatButton(
+                    text="文字圈",
+                    on_release=lambda *_: self._navigate_to("chatrooms", dialog),
+                ),
+                MDFlatButton(
+                    text="直播间",
+                    on_release=lambda *_: self._navigate_to("live_rooms", dialog),
+                ),
+                MDFlatButton(
+                    text="设置",
+                    on_release=lambda *_: self._navigate_to("settings", dialog),
+                ),
+            ],
+        )
+        dialog.open()
+
+    def _navigate_to(self, screen_name, dialog):
+        dialog.dismiss()
+        self.app.root.current = screen_name
 
     def on_refresh(self, *args):
         if self.room_id:

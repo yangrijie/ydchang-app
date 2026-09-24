@@ -184,6 +184,56 @@ except BaseException:
 _disable_kivymd_elevation()
 
 
+def _install_cjk_font():
+    """替换默认字体, 让中文能正常显示.
+
+    Kivy/KivyMD 默认字体 Roboto 不含中文字形, 中文会渲染成方框(tofu).
+    这里优先使用打包进 APK 的 NotoSansSC 字体, 其次尝试 Android 系统自带的
+    中文字体. 注册时覆盖 KivyMD 用到的所有字体名(Roboto*).
+    """
+    try:
+        from kivy.core.text import LabelBase
+    except Exception:
+        _log("CJK font: LabelBase import failed\n" + traceback.format_exc())
+        return
+
+    candidates = [
+        os.path.join(SCRIPT_DIR, "assets", "NotoSansSC-Regular.otf"),
+        "/system/fonts/NotoSansSC-Regular.otf",
+        "/system/fonts/NotoSansCJKsc-Regular.otf",
+        "/system/fonts/DroidSansFallbackFull.ttf",
+        "/system/fonts/DroidSansFallback.ttf",
+        "/system/fonts/MiSans-Regular.ttf",
+        "/system/fonts/HarmonyOS_Sans_SC_Regular.ttf",
+        "/system/fonts/NotoSansCJK-Regular.ttc",
+        "/system/fonts/NotoSansCJKsc-Regular.ttc",
+    ]
+    chosen = None
+    for path in candidates:
+        if os.path.isfile(path):
+            chosen = path
+            break
+    if not chosen:
+        _log("CJK font: no candidate found -> Chinese may render as boxes")
+        return
+
+    names = ("Roboto", "RobotoBold", "RobotoLight", "RobotoMedium",
+             "RobotoThin", "RobotoBlack", "RobotoItalic", "RobotoBoldItalic",
+             "RobotoLightItalic", "RobotoMediumItalic", "RobotoThinItalic",
+             "RobotoBlackItalic")
+    ok = 0
+    for name in names:
+        try:
+            LabelBase.register(name=name, fn_regular=chosen)
+            ok += 1
+        except Exception:
+            pass
+    _log("CJK font: %s registered for %d font names" % (chosen, ok))
+
+
+_install_cjk_font()
+
+
 # 尽早把 Kivy 自身日志接入同一文件 (覆盖窗口/主循环初始化阶段)
 try:
     import logging

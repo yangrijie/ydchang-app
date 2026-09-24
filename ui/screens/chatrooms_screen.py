@@ -120,6 +120,10 @@ class ChatroomsScreen(MDScreen):
                     on_release=lambda *_: self._navigate_to("live_rooms", dialog),
                 ),
                 MDFlatButton(
+                    text="视频",
+                    on_release=lambda *_: self._navigate_to("videos", dialog),
+                ),
+                MDFlatButton(
                     text="设置",
                     on_release=lambda *_: self._navigate_to("settings", dialog),
                 ),

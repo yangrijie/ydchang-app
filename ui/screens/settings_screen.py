@@ -32,6 +32,7 @@ class SettingsScreen(MDScreen):
         # 顶栏
         top_bar = MDTopAppBar(
             title="设置",
+            left_action_items=[["menu", self.on_open_nav]],
             right_action_items=[["refresh", self.on_refresh]],
         )
         root.add_widget(top_bar)
@@ -180,6 +181,35 @@ class SettingsScreen(MDScreen):
         )
 
     # ── 事件 ──────────────────────────────────────────
+    def on_open_nav(self, *args):
+        """导航菜单: 切换到其它主页面."""
+        from kivymd.uix.dialog import MDDialog
+        from kivymd.uix.button import MDFlatButton
+
+        dialog = MDDialog(
+            title="导航",
+            text="选择页面",
+            buttons=[
+                MDFlatButton(
+                    text="文字圈",
+                    on_release=lambda *_: self._navigate_to("chatrooms", dialog),
+                ),
+                MDFlatButton(
+                    text="直播间",
+                    on_release=lambda *_: self._navigate_to("live_rooms", dialog),
+                ),
+                MDFlatButton(
+                    text="视频",
+                    on_release=lambda *_: self._navigate_to("videos", dialog),
+                ),
+            ],
+        )
+        dialog.open()
+
+    def _navigate_to(self, screen_name, dialog):
+        dialog.dismiss()
+        self.app.root.current = screen_name
+
     def on_refresh(self, *args):
         self.token_field.text = (
             self.app.db.get_setting("ydchang.token") or ""

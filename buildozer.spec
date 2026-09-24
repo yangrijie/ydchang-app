@@ -3,7 +3,7 @@ title = 源达投顾
 package.name = org.ydchang.app
 package.domain = org
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,json,ttf,txt,db
+source.include_exts = py,png,jpg,kv,atlas,json,ttf,otf,txt,db
 source.include_dirs = assets
 
 version = 1.0.0
