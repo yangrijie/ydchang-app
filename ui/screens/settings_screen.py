@@ -75,18 +75,58 @@ class SettingsScreen(MDScreen):
         )
         content.add_widget(self._wrap_in_card(self.ids_field))
 
-        # 采集间隔
+        # 重要房间 IDs (这些房间用更高的采集频率)
+        vip_ids = self.app.db.get_setting("ydchang.chatroom.vip_ids") or ""
+        self.vip_ids_field = MDTextField(
+            text=vip_ids,
+            hint_text="重要房间 IDs (逗号分隔, 可留空)",
+            helper_text="例如: 74,81,66 —— 这些房间按下面的"
+                        "\"重要房间间隔\"采集",
+            helper_text_mode="on_focus",
+            multiline=False,
+            size_hint_x=1,
+        )
+        content.add_widget(self._wrap_in_card(self.vip_ids_field))
+
+        # 其他房间采集间隔
         interval = self.app.db.get_setting("ydchang.interval_sec") or "60"
         self.interval_field = MDTextField(
             text=interval,
-            hint_text="采集间隔 (秒)",
-            helper_text="默认 60 秒,前台服务循环间隔",
+            hint_text="其他房间采集间隔 (秒)",
+            helper_text="默认 60 秒",
             helper_text_mode="on_focus",
             multiline=False,
             size_hint_x=1,
             input_filter="int",
         )
         content.add_widget(self._wrap_in_card(self.interval_field))
+
+        # 重要房间采集间隔
+        vip_interval = self.app.db.get_setting("ydchang.vip_interval_sec") or "30"
+        self.vip_interval_field = MDTextField(
+            text=vip_interval,
+            hint_text="重要房间采集间隔 (秒)",
+            helper_text="默认 30 秒, 建议不要低于 15 秒",
+            helper_text_mode="on_focus",
+            multiline=False,
+            size_hint_x=1,
+            input_filter="int",
+        )
+        content.add_widget(self._wrap_in_card(self.vip_interval_field))
+
+        # 直播间 / 视频 采集间隔
+        live_interval = self.app.db.get_setting(
+            "ydchang.live_interval_sec") or "600"
+        self.live_interval_field = MDTextField(
+            text=live_interval,
+            hint_text="直播间/视频采集间隔 (秒)",
+            helper_text="默认 600 秒 (10 分钟)",
+            helper_text_mode="on_focus",
+            multiline=False,
+            size_hint_x=1,
+            input_filter="int",
+        )
+        content.add_widget(self._wrap_in_card(self.live_interval_field))
 
         # 启停按钮 + 状态
         self.status_label = MDLabel(
@@ -174,10 +214,20 @@ class SettingsScreen(MDScreen):
             if stats
             else "无"
         )
+        last_live = st.get("last_live_time") or "(尚未运行)"
+        live_stats = st.get("last_live_stats")
+        live_str = (
+            f"新增房间 {live_stats['new_rooms']} / 新增视频 "
+            f"{live_stats['new_videos']}"
+            if live_stats
+            else "无"
+        )
         return (
-            f"前台服务: 运行中 | 间隔 {st['interval']}s\n"
-            f"上次采集: {last}\n"
-            f"{stats_str}"
+            f"前台服务: 运行中\n"
+            f"间隔: 重要 {st['vip_interval']}s / 其他 {st['interval']}s / "
+            f"直播间视频 {st['live_interval']}s\n"
+            f"文字圈上次采集: {last} ({stats_str})\n"
+            f"直播间上次采集: {last_live} ({live_str})"
         )
 
     # ── 事件 ──────────────────────────────────────────
@@ -220,22 +270,40 @@ class SettingsScreen(MDScreen):
         self.interval_field.text = (
             self.app.db.get_setting("ydchang.interval_sec") or "60"
         )
+        self.vip_ids_field.text = (
+            self.app.db.get_setting("ydchang.chatroom.vip_ids") or ""
+        )
+        self.vip_interval_field.text = (
+            self.app.db.get_setting("ydchang.vip_interval_sec") or "30"
+        )
+        self.live_interval_field.text = (
+            self.app.db.get_setting("ydchang.live_interval_sec") or "600"
+        )
         self._refresh_status()
 
     def on_save(self, *args):
         token = self.token_field.text.strip()
         ids = self.ids_field.text.strip() or "74"
         interval = int(self.interval_field.text.strip() or "60")
+        vip_ids = self.vip_ids_field.text.strip()
+        vip_interval = int(self.vip_interval_field.text.strip() or "30")
+        live_interval = int(self.live_interval_field.text.strip() or "600")
 
         self.app.db.set_setting("ydchang.token", token)
         self.app.db.set_setting("ydchang.chatroom.watch_ids", ids)
         self.app.db.set_setting("ydchang.interval_sec", str(interval))
+        self.app.db.set_setting("ydchang.chatroom.vip_ids", vip_ids)
+        self.app.db.set_setting("ydchang.vip_interval_sec", str(vip_interval))
+        self.app.db.set_setting("ydchang.live_interval_sec", str(live_interval))
 
-        # 通知采集器更新 token,并更新间隔
+        # 通知采集器更新 token,并让前台服务重新读取间隔配置
         self.app.collector.reload_token(token)
-        self.app.fg.interval = interval
+        self.app.fg.refresh_config()
 
-        self._show_dialog("已保存", f"Token: {token[:8]}****\n监听: {ids}\n间隔: {interval}s")
+        self._show_dialog(
+            "已保存",
+            f"Token: {token[:8]}****\n监听: {ids}\n重要: {vip_ids or '(无)'}\n"
+            f"其他 {interval}s / 重要 {vip_interval}s / 直播间视频 {live_interval}s")
 
     def on_toggle_service(self, *args):
         if self.app.fg.is_running():

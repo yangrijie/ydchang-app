@@ -267,12 +267,12 @@ class YDChangApp(MDApp):
             _log("build(): init collectors")
             self.collector = ChatroomCollector(self.db)
             self.live_collector = LiveRoomCollector(self.db)
-            try:
-                interval_str = self.db.get_setting("ydchang.interval_sec") or "60"
-                interval = int(interval_str)
-            except Exception:
-                interval = 60
-            self.fg = ForegroundCollector(self.collector, interval_sec=interval)
+            # 三个采集间隔由 ForegroundCollector 自己从数据库读取,
+            # 在"参数设置"页修改后下一轮调度即生效, 无需重启服务.
+            self.fg = ForegroundCollector(
+                self.collector,
+                live_collector=self.live_collector,
+            )
 
             _log("build(): theme")
             self.theme_cls.material_style = "M3"
