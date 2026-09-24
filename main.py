@@ -120,6 +120,8 @@ _log("cwd=%s script_dir=%s" % (os.getcwd(), SCRIPT_DIR))
 # ── 导入阶段单独捕获 (定位 import 期崩溃) ─────────────────────────────
 try:
     from kivymd.app import MDApp
+    from kivymd.uix.label import MDLabel
+    from kivymd.uix.screen import MDScreen
     from kivymd.uix.screenmanager import MDScreenManager
 
     from services.database import AppDatabase
@@ -186,11 +188,26 @@ class YDChangApp(MDApp):
 
             _log("build(): screens")
             sm = MDScreenManager()
-            sm.add_widget(ChatroomsScreen(name="chatrooms"))
-            sm.add_widget(MessagesScreen(name="messages"))
-            sm.add_widget(LiveRoomsScreen(name="live_rooms"))
-            sm.add_widget(VideosScreen(name="videos"))
-            sm.add_widget(SettingsScreen(name="settings"))
+            screen_defs = (
+                ("chatrooms", ChatroomsScreen),
+                ("messages", MessagesScreen),
+                ("live_rooms", LiveRoomsScreen),
+                ("videos", VideosScreen),
+                ("settings", SettingsScreen),
+            )
+            for screen_name, screen_cls in screen_defs:
+                try:
+                    sm.add_widget(screen_cls(name=screen_name))
+                except BaseException:
+                    # 单个页面初始化失败时降级为占位页, 保证其余页面仍可用,
+                    # 并把完整 traceback 写进日志(便于一次性定位所有问题).
+                    _log("!!! screen '%s' FAILED !!!\n%s" % (
+                        screen_name, traceback.format_exc()))
+                    placeholder = MDScreen(name=screen_name)
+                    placeholder.add_widget(MDLabel(
+                        text="页面 [%s] 初始化失败" % screen_name,
+                        halign="center"))
+                    sm.add_widget(placeholder)
             _log("build(): done")
             return sm
         except BaseException:
