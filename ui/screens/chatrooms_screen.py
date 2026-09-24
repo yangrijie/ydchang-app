@@ -3,6 +3,7 @@
 """文字圈列表页"""
 from __future__ import annotations
 
+from kivy.clock import Clock
 from kivy.metrics import dp
 from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -43,17 +44,20 @@ class ChatroomsScreen(MDScreen):
         )
         self.chip_all = MDChip(
             text="全部",
-            active=True,
             on_press=lambda *_: self._switch_mode(False),
         )
         self.chip_watched = MDChip(
             text="仅监听",
-            active=False,
             on_press=lambda *_: self._switch_mode(True),
         )
         chip_box.add_widget(self.chip_all)
         chip_box.add_widget(self.chip_watched)
         root.add_widget(chip_box)
+        # KivyMD 1.1.1 的 MDChip 内部 kv/ids 是在 __init__ 之后才建立的:
+        # 构造时传 active=True 会让 Kivy 在处理该属性时立即触发
+        # on_active -> do_animation_check, 访问 self.ids["icon_left_box"]
+        # 抛 KeyError 而直接崩溃. 因此初始选中态推迟到下一帧(kv/ids 就绪)设置.
+        Clock.schedule_once(self._sync_chip_state, 0)
 
         # 列表
         self.scroll = MDScrollView()
@@ -80,6 +84,15 @@ class ChatroomsScreen(MDScreen):
         self.add_widget(root)
 
     # ── 事件 ──────────────────────────────────────────
+    def _sync_chip_state(self, *args):
+        """按当前模式同步 chip 选中态(须在 MDChip 初始化完成之后调用)."""
+        watched = getattr(self, "_only_watched", False)
+        try:
+            self.chip_all.active = not watched
+            self.chip_watched.active = watched
+        except Exception:
+            pass
+
     def _switch_mode(self, watched: bool):
         self.chip_all.active = not watched
         self.chip_watched.active = watched
