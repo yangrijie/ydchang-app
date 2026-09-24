@@ -80,6 +80,47 @@ def _log(msg: str) -> None:
         pass
 
 
+def _disable_kivymd_elevation():
+    """禁用 KivyMD 控件的阴影(elevation).
+
+    KivyMD 1.1.1 的阴影是用自定义 RenderContext + 手写 GLSL 实现的
+    (kivymd/uix/behaviors/elevation.py: context.shader.fs = ...)。
+    这套 shader 与 Kivy 2.2+ 重写后的图形栈不兼容: 首次绘制时会在
+    RenderContext.draw() 里触发原生段错误(SIGSEGV), 表现为 App 启动后
+    立刻闪退。这里去掉阴影, 只保留控件本体。
+    注: 其它方法都自带 hasattr(self, "rect") 保护, 所以不创建阴影对象是安全的。
+    """
+    try:
+        from kivymd.uix.behaviors import elevation as _elev
+    except Exception:
+        _log("elevation patch: import failed\n" + traceback.format_exc())
+        return
+
+    base = getattr(_elev, "CommonElevationBehavior", None)
+    if base is None:
+        _log("elevation patch: CommonElevationBehavior not found")
+        return
+
+    def _patched_init(self, **kwargs):
+        # 只做基类初始化, 不创建 RenderContext / 阴影矩形 / 自定义 shader,
+        # 也不再 Window.bind(on_draw=...)
+        super(base, self).__init__(**kwargs)
+
+    base.__init__ = _patched_init
+
+    for _name in ("set_shader_string", "get_shader_string", "update_resolution",
+                  "on_shadow_color", "on_shadow_radius", "on_shadow_softness",
+                  "on_elevation", "on_shadow_offset", "on_pos", "on_size",
+                  "on_opacity", "on_radius", "on_disabled"):
+        if hasattr(base, _name):
+            setattr(base, _name, lambda self, *a, **k: None)
+
+    if hasattr(base, "hide_elevation"):
+        base.hide_elevation = lambda self, hide: None
+
+    _log("kivymd elevation disabled (Kivy 2.2+ GLSL shadow incompatibility)")
+
+
 # faulthandler: 段错误/原生崩溃
 try:
     _fh_bin = open(LOG_FILE, "ab")
@@ -138,6 +179,9 @@ try:
 except BaseException:
     _log("!!! IMPORT FAILURE !!!\n" + traceback.format_exc())
     raise
+
+# 必须在任何 KivyMD 控件实例化之前禁用阴影, 否则渲染时段错误
+_disable_kivymd_elevation()
 
 
 # 尽早把 Kivy 自身日志接入同一文件 (覆盖窗口/主循环初始化阶段)
