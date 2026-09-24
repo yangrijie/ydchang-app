@@ -309,12 +309,24 @@ class SettingsScreen(MDScreen):
         if self.app.fg.is_running():
             self.app.fg.stop()
         else:
-            # 先读取 interval 再启动
+            # 启动前把界面上的三个间隔写回数据库, 这样即使没点"保存设置",
+            # 直接点"启动"也能以界面上的值为准.
             try:
-                interval = int(self.interval_field.text.strip() or "60")
-            except ValueError:
-                interval = 60
-            self.app.fg.interval = interval
+                self.app.db.set_setting(
+                    "ydchang.interval_sec",
+                    str(int(self.interval_field.text.strip() or "60")))
+                self.app.db.set_setting(
+                    "ydchang.vip_interval_sec",
+                    str(int(self.vip_interval_field.text.strip() or "30")))
+                self.app.db.set_setting(
+                    "ydchang.live_interval_sec",
+                    str(int(self.live_interval_field.text.strip() or "600")))
+                self.app.db.set_setting(
+                    "ydchang.chatroom.vip_ids",
+                    self.vip_ids_field.text.strip())
+            except Exception:
+                pass
+            self.app.fg.refresh_config()
             self.app.fg.start()
         self._refresh_status()
 
